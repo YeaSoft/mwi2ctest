@@ -1,0 +1,3 @@
+[submodule "lib/MeisterWerk"]
+	path = lib/MeisterWerk
+	url = git@github.com:YeaSoft/MeisterWerk.git
