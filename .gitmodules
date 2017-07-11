@@ -1,3 +1,3 @@
-[submodule "lib/MeisterWerk"]
-	path = lib/MeisterWerk
-	url = git@github.com:YeaSoft/MeisterWerk.git
+[submodule "lib/Meisterwerk"]
+	path = lib/Meisterwerk
+	url = git@github.com:YeaSoft/MeisterWerk
