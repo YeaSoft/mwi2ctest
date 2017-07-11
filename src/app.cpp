@@ -51,14 +51,15 @@ class MyLed : public core::entity {
 // application class
 class MyApp : public core::baseapp {
     public:
-    MyApp()
-        : core::baseapp( "MyApp" ) {
+    base::i2cbus i2cb;
+    MyApp() : core::baseapp( "MyApp" ), i2cb("i2cbus",D1,D2)  {
     }
 
     virtual void onSetup() {
         // Debug console
         Serial.begin( 115200 );
-
+        DBG("We begin.");
+        i2cb.registerEntity();
     }
 };
 
