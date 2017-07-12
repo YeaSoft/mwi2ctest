@@ -13,7 +13,7 @@
 // framework includes
 #include <MeisterWerk.h>
 #include <base/i2cbus.h>
-#include <base/i2cdev.h>
+#include <thing/i2cdev-BMP085.h>
 
 using namespace meisterwerk;
 
@@ -21,8 +21,8 @@ using namespace meisterwerk;
 class MyApp : public core::baseapp {
     public:
     base::i2cbus i2cb;
-    base::i2cdev i2cd;
-    MyApp() : core::baseapp( "MyApp" ), i2cb("i2cbus",D1,D2), i2cd("i2cdev1","SSD1306")  {
+    base::i2cdev_BMP085 i2cd;
+    MyApp() : core::baseapp( "MyApp" ), i2cb("i2cbus",D1,D2), i2cd("i2cSensor1")  {
     }
 
     virtual void onSetup() {
