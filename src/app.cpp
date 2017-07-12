@@ -22,7 +22,7 @@ class MyApp : public core::baseapp {
     public:
     base::i2cbus i2cb;
     base::i2cdev i2cd;
-    MyApp() : core::baseapp( "MyApp" ), i2cb("i2cbus",D1,D2), i2cd("ic2dev1","SSD1306")  {
+    MyApp() : core::baseapp( "MyApp" ), i2cb("i2cbus",D1,D2), i2cd("i2cdev1","SSD1306")  {
     }
 
     virtual void onSetup() {
