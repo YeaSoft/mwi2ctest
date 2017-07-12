@@ -20,15 +20,15 @@ using namespace meisterwerk;
 // application class
 class MyApp : public core::baseapp {
     public:
-    base::i2cbus i2cb;
-    base::i2cdev_BMP085 i2cd;
-    MyApp() : core::baseapp( "MyApp" ), i2cb("i2cbus",D1,D2), i2cd("i2cSensor1")  {
+    base::i2cbus         i2cb;
+    thing::i2cdev_BMP085 i2cd;
+    MyApp() : core::baseapp( "MyApp" ), i2cb( "i2cbus", D1, D2 ), i2cd( "i2cSensor1" ) {
     }
 
     virtual void onSetup() {
         // Debug console
         Serial.begin( 115200 );
-        DBG("We begin.");
+        DBG( "We begin." );
         i2cb.registerEntity();
         i2cd.registerEntity();
     }
