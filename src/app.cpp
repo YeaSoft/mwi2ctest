@@ -80,7 +80,6 @@ class MyApp : public core::baseapp {
         dmp.registerEntity();
         dbg.registerEntity();
         led1.registerEntity( 50000 );
-
         i2cb.registerEntity();
         i2cd.registerEntity();
     }
