@@ -19,7 +19,8 @@
 #include <util/timebudget.h>
 
 #include <base/i2cbus.h>
-#include <thing/i2cdev-BMP085.h>
+#include <thing/i2cdev-LCD_2_4_16_20.h>
+#include <thing/i2cdev-LED7_14_SEG.h>
 
 using namespace meisterwerk;
 
@@ -55,6 +56,18 @@ class MyLed : public core::entity {
     }
 };
 
+//
+// Vin GND Rst En  3V3 GND SCK SD0 CMD SD1 SD2 SD3 RSV RSV A0
+// [ ]Rst                         +----------------------+ =|
+// U|                             |                      |  |
+// S|                             |    ESP-12F           | =
+// B|                             |                      |  |
+// [ ]Flsh                        +----------------------+ =|
+// 3V3 GND Tx  Rx  D8  D7  D6  D5  GND 3V3 D4  D3  D2  D1  D0
+//                                        [Sw]   [scl|sda]
+//
+//   convention: SCL:yellow cable, SDA:green cable.
+
 // application class
 class MyApp : public core::baseapp {
     public:
@@ -63,25 +76,28 @@ class MyApp : public core::baseapp {
     util::dumper           dmp;
     thing::pushbutton_GPIO dbg;
 
-    base::i2cbus         i2cb;
-    thing::i2cdev_BMP085 i2cd;
+    base::i2cbus                i2cb;
+    thing::i2cdev_LED7_14_SEG   i2cd1;
+    thing::i2cdev_LCD_2_4_16_20 i2cd2;
     MyApp()
         : core::baseapp( "MyApp" ), led1( "led1", BUILTIN_LED, 500 ), dmp( "dmp" ),
-          dbg( "dbg", D4, 1000, 5000 ), i2cb( "i2cbus", D1, D2 ), i2cd( "i2cSensor1" ) {
+          dbg( "dbg", D4, 1000, 5000 ), i2cb( "i2cbus", D1, D2 ), i2cd1( "i2cSensor1" ),
+          i2cd2( "i2cSensor2" ) {
     }
 
     virtual void onSetup() {
         // Debug console
         Serial.begin( 115200 );
         // register myself
-        registerEntity();
+        registerEntity( 100000 );
 
         spy.registerEntity();
         dmp.registerEntity();
         dbg.registerEntity();
         led1.registerEntity( 50000 );
         i2cb.registerEntity();
-        i2cd.registerEntity();
+        i2cd1.registerEntity();
+        i2cd2.registerEntity();
     }
     void onRegister() override {
         subscribe( "dbg/short" );
@@ -89,7 +105,14 @@ class MyApp : public core::baseapp {
         subscribe( "dbg/extralong" );
     }
 
+    int  l = 0;
     void onLoop( unsigned long timer ) override {
+        if ( l == 0 ) {
+            l = 1;
+            DBG( "pub->display" );
+            publish( "i2cSensor1/display" );
+            publish( "i2cSensor2/display" );
+        }
     }
 
     virtual void onReceive( String origin, String topic, String msg ) {
