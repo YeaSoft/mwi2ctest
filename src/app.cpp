@@ -83,7 +83,7 @@ class MyApp : public core::baseapp {
     thing::i2cdev_LCD_2_4_16_20 i2cd4;
     MyApp()
         : core::baseapp( "MyApp" ), led1( "led1", BUILTIN_LED, 500 ), dmp( "dmp" ),
-          dbg( "dbg", D4, 1000, 5000 ), i2cb( "i2cbus", D1, D2 ), i2cd1( "D1" ),
+          dbg( "dbg", D4, 1000, 5000 ), i2cb( "i2cbus", D1, D2 ), i2cd1( "D1", 0x70 ),
           i2cd2( "D2", 0x25, "2x16" ), i2cd3( "D3", 0x26, "4x20" ), i2cd4( "D4", 0x27, "2x16" ) {
     }
 
