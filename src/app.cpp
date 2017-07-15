@@ -56,7 +56,7 @@ class MyLed : public core::entity {
     }
 };
 
-//
+//[Lcd+]
 // Vin GND Rst En  3V3 GND SCK SD0 CMD SD1 SD2 SD3 RSV RSV A0
 // [ ]Rst                         +----------------------+ =|
 // U|                             |                      |  |
@@ -79,10 +79,11 @@ class MyApp : public core::baseapp {
     base::i2cbus                i2cb;
     thing::i2cdev_LED7_14_SEG   i2cd1;
     thing::i2cdev_LCD_2_4_16_20 i2cd2;
+    thing::i2cdev_LCD_2_4_16_20 i2cd3;
     MyApp()
         : core::baseapp( "MyApp" ), led1( "led1", BUILTIN_LED, 500 ), dmp( "dmp" ),
-          dbg( "dbg", D4, 1000, 5000 ), i2cb( "i2cbus", D1, D2 ), i2cd1( "i2cSensor1" ),
-          i2cd2( "i2cSensor2" ) {
+          dbg( "dbg", D4, 1000, 5000 ), i2cb( "i2cbus", D1, D2 ), i2cd1( "i2cTextDisplay1" ),
+          i2cd2( "i2cTextDisplay2", "2x16" ), i2cd3( "i2cTextDisplay3", "4x20" ) {
     }
 
     virtual void onSetup() {
@@ -98,6 +99,7 @@ class MyApp : public core::baseapp {
         i2cb.registerEntity();
         i2cd1.registerEntity();
         i2cd2.registerEntity();
+        i2cd3.registerEntity();
     }
     void onRegister() override {
         subscribe( "dbg/short" );
@@ -110,8 +112,9 @@ class MyApp : public core::baseapp {
         if ( l == 0 ) {
             l = 1;
             DBG( "pub->display" );
-            publish( "i2cSensor1/display" );
-            publish( "i2cSensor2/display" );
+            publish( "i2cTextDisplay1/display" );
+            publish( "i2cTextDisplay2/display" );
+            publish( "i2cTextDisplay3/display" );
         }
     }
 
