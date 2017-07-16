@@ -81,10 +81,12 @@ class MyApp : public core::baseapp {
     thing::i2cdev_LCD_2_4_16_20 i2cd2;
     thing::i2cdev_LCD_2_4_16_20 i2cd3;
     thing::i2cdev_LCD_2_4_16_20 i2cd4;
+    thing::i2cdev_LED7_14_SEG   i2cd5;
     MyApp()
         : core::baseapp( "MyApp" ), led1( "led1", BUILTIN_LED, 500 ), dmp( "dmp" ),
           dbg( "dbg", D4, 1000, 5000 ), i2cb( "i2cbus", D1, D2 ), i2cd1( "D1", 0x70 ),
-          i2cd2( "D2", 0x25, "2x16" ), i2cd3( "D3", 0x26, "4x20" ), i2cd4( "D4", 0x27, "2x16" ) {
+          i2cd2( "D2", 0x25, "2x16" ), i2cd3( "D3", 0x26, "4x20" ), i2cd4( "D4", 0x27, "2x16" ),
+          i2cd5( "D5", 0x71 ) {
     }
 
     virtual void onSetup() {
@@ -102,6 +104,7 @@ class MyApp : public core::baseapp {
         i2cd2.registerEntity();
         i2cd3.registerEntity();
         i2cd4.registerEntity();
+        i2cd5.registerEntity();
     }
     void onRegister() override {
         subscribe( "dbg/short" );
@@ -118,6 +121,7 @@ class MyApp : public core::baseapp {
             publish( "D2/display" );
             publish( "D3/display" );
             publish( "D4/display" );
+            publish( "D5/display" );
         }
     }
 
