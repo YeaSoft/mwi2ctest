@@ -17,9 +17,13 @@
 #include <thing/pushbutton-GPIO.h>
 #include <util/dumper.h>
 #include <util/messagespy.h>
+#include <util/msgtime.h>
 #include <util/timebudget.h>
 
+#include <base/net.h>
 #include <base/i2cbus.h>
+#include <base/mastertime.h>
+#include <thing/GPS_NEO_6M.h>
 #include <thing/i2cdev-LCD_2_4_16_20.h>
 #include <thing/i2cdev-LED7_14_SEG.h>
 #include <thing/i2cdev-OLED_SSD1306.h>
@@ -78,6 +82,7 @@ class MyApp : public core::baseapp {
     util::dumper           dmp;
     thing::pushbutton_GPIO dbg;
 
+    base::net                 wnet;
     base::i2cbus              i2cb;
     thing::i2cdev_LED7_14_SEG i2cd1;
     /*
@@ -87,6 +92,10 @@ class MyApp : public core::baseapp {
     thing::i2cdev_LED7_14_SEG   i2cd5;
 */
     thing::i2cdev_OLED_SSD1306 i2coled;
+
+    base::mastertime  mtm;
+    thing::GPS_NEO_6M gps;
+
     MyApp()
         : core::baseapp( "MyApp" ), led1( "led1", BUILTIN_LED, 500 ), dmp( "dmp" ),
           dbg( "dbg", D4, 1000, 5000 ), i2cb( "i2cbus", D1, D2 ),
@@ -96,13 +105,14 @@ class MyApp : public core::baseapp {
           i2cd2( "D2", 0x25, "2x16" ), i2cd3( "D3", 0x26, "4x20" ), i2cd4( "D4", 0x27, "2x16" ),
           i2cd5( "D5", 0x71 )
           */
-          i2coled( "D2", 0x3c, "128x64" ) {
+          i2coled( "D2", 0x3c, "128x64" ), mtm( "mastertime" ), gps( "gps" ),
+          wnet("net") {
     }
 
     virtual void onSetup() {
         // Debug console
         Serial.begin( 115200 );
-        
+
         // register myself
         registerEntity( 100000 );
 
@@ -119,12 +129,17 @@ class MyApp : public core::baseapp {
         i2cd4.registerEntity();
         i2cd5.registerEntity();
         */
+        wnet.registerEntity();
+
         i2coled.registerEntity();
+
+        mtm.registerEntity();
+        //gps.registerEntity();
     }
     void onRegister() override {
-        subscribe( "dbg/short" );
-        subscribe( "dbg/long" );
-        subscribe( "dbg/extralong" );
+        // subscribe( "dbg/short" );
+        // subscribe( "dbg/long" );
+        // subscribe( "dbg/extralong" );
     }
 
     int  l = 0;
