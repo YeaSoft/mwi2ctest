@@ -1,5 +1,5 @@
 .pioenvs
 .piolibdeps
 .vscode
-
+data/net.json
 .DS_Store
