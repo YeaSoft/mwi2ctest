@@ -108,7 +108,7 @@ class MyApp : public core::baseapp {
           i2cd5( "D5", 0x71 )
           */
           i2coled( "D2", 0x3c, "128x64" ), mtm( "mastertime" ), gps( "gps" ), wnet( "net" ),
-          ntpcl( "ntpcl", "fritz.box" ) { // time.nist.gov
+          ntpcl( "ntpcl" ) {
     }
 
     virtual void onSetup() {
