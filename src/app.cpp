@@ -70,8 +70,8 @@ class MyLed : public core::entity {
 // B|                             |                      |  |
 // [ ]Flsh                        +----------------------+ =|
 // 3V3 GND Tx  Rx  D8  D7  D6  D5  GND 3V3 D4  D3  D2  D1  D0
-//                                        [Sw]   [scl|sda]
-//
+//                    [TX][RX]            [Sw]   [sda|scl]
+//                    SwSerial           Switch   I2C-Bus
 //   convention: SCL:yellow cable, SDA:green cable.
 
 // application class
@@ -98,9 +98,9 @@ class MyApp : public core::baseapp {
 
     MyApp()
         : core::baseapp( "MyApp" ), led1( "led1", BUILTIN_LED, 500 ), dmp( "dmp" ),
-          dbg( "dbg", D4, 1000, 5000 ), i2cb( "i2cbus", D1, D2 ),
+          dbg( "dbg", D4, 1000, 5000 ), i2cb( "i2cbus", D2, D1 ),
 
-          i2cd1( "D1", 0x70 ),
+          i2cd1( "D1", 0x70, 14),
           /*
           i2cd2( "D2", 0x25, "2x16" ), i2cd3( "D3", 0x26, "4x20" ), i2cd4( "D4", 0x27, "2x16" ),
           i2cd5( "D5", 0x71 )
@@ -134,7 +134,7 @@ class MyApp : public core::baseapp {
         i2coled.registerEntity();
 
         mtm.registerEntity();
-        //gps.registerEntity();
+        gps.registerEntity();
     }
     void onRegister() override {
         // subscribe( "dbg/short" );
@@ -154,7 +154,7 @@ class MyApp : public core::baseapp {
             publish( "D4/display" );
             publish( "D5/display" );
             */
-            publish( "D1/display" );
+            publish( "D1/display", "{\"text\":\"Dominik Schloesser ist ein Meisterwerker.\"}" );
             publish( "D2/display" );
         }
     }
