@@ -3,3 +3,7 @@
 .vscode
 data/net.json
 .DS_Store
+GTAGS
+GRTAGS
+GPATH
+
