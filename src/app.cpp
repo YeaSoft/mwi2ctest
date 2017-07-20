@@ -20,13 +20,14 @@
 #include <util/msgtime.h>
 #include <util/timebudget.h>
 
-#include <base/net.h>
 #include <base/i2cbus.h>
 #include <base/mastertime.h>
+#include <base/net.h>
 #include <thing/GPS_NEO_6M.h>
 #include <thing/i2cdev-LCD_2_4_16_20.h>
 #include <thing/i2cdev-LED7_14_SEG.h>
 #include <thing/i2cdev-OLED_SSD1306.h>
+#include <thing/ntp.h>
 
 using namespace meisterwerk;
 
@@ -95,18 +96,19 @@ class MyApp : public core::baseapp {
 
     base::mastertime  mtm;
     thing::GPS_NEO_6M gps;
+    thing::Ntp        ntpcl;
 
     MyApp()
         : core::baseapp( "MyApp" ), led1( "led1", BUILTIN_LED, 500 ), dmp( "dmp" ),
           dbg( "dbg", D4, 1000, 5000 ), i2cb( "i2cbus", D2, D1 ),
 
-          i2cd1( "D1", 0x70, 14),
+          i2cd1( "D1", 0x70, 14 ),
           /*
           i2cd2( "D2", 0x25, "2x16" ), i2cd3( "D3", 0x26, "4x20" ), i2cd4( "D4", 0x27, "2x16" ),
           i2cd5( "D5", 0x71 )
           */
-          i2coled( "D2", 0x3c, "128x64" ), mtm( "mastertime" ), gps( "gps" ),
-          wnet("net") {
+          i2coled( "D2", 0x3c, "128x64" ), mtm( "mastertime" ), gps( "gps" ), wnet( "net" ),
+          ntpcl( "ntpcl", "fritz.box" ) { // time.nist.gov
     }
 
     virtual void onSetup() {
@@ -135,6 +137,7 @@ class MyApp : public core::baseapp {
 
         mtm.registerEntity();
         gps.registerEntity();
+        ntpcl.registerEntity();
     }
     void onRegister() override {
         // subscribe( "dbg/short" );
