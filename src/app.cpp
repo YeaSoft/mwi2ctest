@@ -86,6 +86,7 @@ class MyApp : public core::baseapp {
     base::net                 wnet;
     base::i2cbus              i2cb;
     thing::i2cdev_LED7_14_SEG i2cd1;
+    String                    oldtime = "";
     /*
     thing::i2cdev_LCD_2_4_16_20 i2cd2;
     thing::i2cdev_LCD_2_4_16_20 i2cd3;
@@ -149,16 +150,25 @@ class MyApp : public core::baseapp {
     void onLoop( unsigned long timer ) override {
         if ( l == 0 ) {
             l = 1;
-            DBG( "pub->display" );
-            /*
-            publish( "D1/display" );
+            publish( "D1/display", "{\"text\":\"Boot\"}" );
             publish( "D2/display" );
-            publish( "D3/display" );
-            publish( "D4/display" );
-            publish( "D5/display" );
-            */
-            publish( "D1/display", "{\"text\":\"Dominik Schloesser ist ein Meisterwerker.\"}" );
-            publish( "D2/display" );
+        } else {
+            char         s[5];
+            TimeElements tt;
+            strcpy( s, "0000" );
+            time_t localt = util::msgtime::time_t2local( now() );
+            breakTime( localt, tt );
+            int hr         = tt.Hour;
+            int mr         = tt.Minute;
+            s[0]           = '0' + hr / 10;
+            s[1]           = '0' + hr % 10;
+            s[2]           = '0' + mr / 10;
+            s[3]           = '0' + mr % 10;
+            String newtime = String( s );
+            if ( oldtime != newtime ) {
+                oldtime = newtime;
+                publish( "D1/display", "{\"text\":\"" + newtime + "\"}" );
+            }
         }
     }
 
