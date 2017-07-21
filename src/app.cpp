@@ -87,14 +87,15 @@ class MyApp : public core::baseapp {
     base::net                 wnet;
     base::i2cbus              i2cb;
     thing::i2cdev_LED7_14_SEG i2cd1;
-    String                    oldtime = "";
+    String                    oldtime   = "";
+    String                    clockType = "";
 
     bool   redraw = false;
     String temperature;
     String pressure;
     String isoTimeTemp;
     String isoTimePress;
-
+    int    noSat = 0;
     /*
     thing::i2cdev_LCD_2_4_16_20 i2cd2;
     */
@@ -128,7 +129,7 @@ i2cd5( "D5", 0x71 )
         Serial.begin( 115200 );
 
         // register myself
-        registerEntity( 100000 );
+        registerEntity( 50000 );
 
         spy.registerEntity();
         dmp.registerEntity();
@@ -157,11 +158,14 @@ i2cd5( "D5", 0x71 )
     void onRegister() override {
         subscribe( "*/temperature" );
         subscribe( "*/pressure" );
+        subscribe( "mastertime/time/set" );
+        subscribe( "*/gps" );
         // subscribe( "dbg/short" );
         // subscribe( "dbg/long" );
         // subscribe( "dbg/extralong" );
     }
 
+    String oldiso = "";
     void onLoop( unsigned long timer ) override {
         char         s[5];
         TimeElements tt;
@@ -179,9 +183,14 @@ i2cd5( "D5", 0x71 )
             redraw  = false;
             oldtime = newtime;
             publish( "D1/display/set", "{\"text\":\"" + newtime + "\"}" );
-
+        }
+        String iso = util::msgtime::time_t2ISO( localt );
+        iso[10]    = ' ';
+        iso[19]    = ' ';
+        if ( oldiso != iso ) {
+            oldiso = iso;
             publish( "D2/display/set",
-                     "{\"x\":0,\"y\":0,\"textsize\":1,\"clear\":1,\"text\":\"" + newtime + "\"}" );
+                     "{\"x\":0,\"y\":0,\"textsize\":1,\"clear\":1,\"text\":\"" + iso + "\"}" );
             publish( "D2/display/set",
                      "{\"x\":0,\"y\":20,\"textsize\":1,\"clear\":0,\"text\":\"" + isoTimeTemp +
                          "\"}" );
@@ -195,8 +204,13 @@ i2cd5( "D5", 0x71 )
                      "{\"x\":0,\"y\":50,\"textsize\":1,\"clear\":0,\"text\":\"" + pressure +
                          "\"}" );
 
+            publish( "D3/display/set", "{\"x\":0,\"y\":0,\"clear\":0,\"text\":\"" + iso + "\"}" );
             publish( "D3/display/set",
-                     "{\"x\":0,\"y\":0,\"clear\":1,\"text\":\"" + newtime + "\"}" );
+                     "{\"x\":0,\"y\":1,\"clear\":0,\"text\":\"Clock type: " + clockType +
+                         "      \"}" );
+            publish( "D3/display/set",
+                     "{\"x\":0,\"y\":2,\"clear\":0,\"text\":\"Satellites: " + String( noSat ) +
+                         "      \"}" );
         }
     }
 
@@ -222,6 +236,24 @@ i2cd5( "D5", 0x71 )
             }
             isoTimePress = root["time"].as<char *>();
             pressure     = root["pressure"].as<char *>();
+        }
+        if ( t1 == "gps" ) {
+            DynamicJsonBuffer jsonBuffer( 200 );
+            JsonObject &      root = jsonBuffer.parseObject( msg );
+            if ( !root.success() ) {
+                DBG( "AppTemp: Invalid JSON received: " + msg );
+                return;
+            }
+            noSat = root["satellites"];
+        }
+        if ( topic == "mastertime/time/set" ) {
+            DynamicJsonBuffer jsonBuffer( 200 );
+            JsonObject &      root = jsonBuffer.parseObject( msg );
+            if ( !root.success() ) {
+                DBG( "AppTemp: Invalid JSON received: " + msg );
+                return;
+            }
+            clockType = root["timesource"].as<char *>();
         }
     }
 };
