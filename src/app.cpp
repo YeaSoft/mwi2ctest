@@ -24,6 +24,7 @@
 #include <base/mastertime.h>
 #include <base/net.h>
 #include <thing/GPS_NEO_6M.h>
+#include <thing/i2cdev-BMP085.h>
 #include <thing/i2cdev-LCD_2_4_16_20.h>
 #include <thing/i2cdev-LED7_14_SEG.h>
 #include <thing/i2cdev-OLED_SSD1306.h>
@@ -87,17 +88,26 @@ class MyApp : public core::baseapp {
     base::i2cbus              i2cb;
     thing::i2cdev_LED7_14_SEG i2cd1;
     String                    oldtime = "";
+
+    bool   redraw = false;
+    String temperature;
+    String pressure;
+    String isoTimeTemp;
+    String isoTimePress;
+
     /*
     thing::i2cdev_LCD_2_4_16_20 i2cd2;
+    */
     thing::i2cdev_LCD_2_4_16_20 i2cd3;
-    thing::i2cdev_LCD_2_4_16_20 i2cd4;
-    thing::i2cdev_LED7_14_SEG   i2cd5;
-*/
+    /*
+        thing::i2cdev_LCD_2_4_16_20 i2cd4;
+        thing::i2cdev_LED7_14_SEG   i2cd5;
+    */
     thing::i2cdev_OLED_SSD1306 i2coled;
-
-    base::mastertime  mtm;
-    thing::GPS_NEO_6M gps;
-    thing::Ntp        ntpcl;
+    thing::i2cdev_BMP085       bmp180;
+    base::mastertime           mtm;
+    thing::GPS_NEO_6M          gps;
+    thing::Ntp                 ntpcl;
 
     MyApp()
         : core::baseapp( "MyApp" ), led1( "led1", BUILTIN_LED, 500 ), dmp( "dmp" ),
@@ -105,11 +115,12 @@ class MyApp : public core::baseapp {
 
           i2cd1( "D1", 0x70, 14 ),
           /*
-          i2cd2( "D2", 0x25, "2x16" ), i2cd3( "D3", 0x26, "4x20" ), i2cd4( "D4", 0x27, "2x16" ),
-          i2cd5( "D5", 0x71 )
-          */
-          i2coled( "D2", 0x3c, "128x64" ), mtm( "mastertime" ), gps( "gps" ), wnet( "net" ),
-          ntpcl( "ntpcl" ) {
+          i2cd2( "D2", 0x25, "2x16" ), */ i2cd3( "D3", 0x26, 4,
+                                                 20 ), /* i2cd4( "D4", 0x27, "2x16" ),
+i2cd5( "D5", 0x71 )
+*/
+          bmp180( "bmp180", 0x77 ), i2coled( "D2", 0x3c, 64, 128 ), mtm( "mastertime" ),
+          gps( "gps" ), wnet( "net" ), ntpcl( "ntpcl" ) {
     }
 
     virtual void onSetup() {
@@ -128,10 +139,13 @@ class MyApp : public core::baseapp {
         i2cd1.registerEntity();
         /*
         i2cd2.registerEntity();
+        */
         i2cd3.registerEntity();
+        /*
         i2cd4.registerEntity();
         i2cd5.registerEntity();
         */
+        bmp180.registerEntity();
         wnet.registerEntity();
 
         i2coled.registerEntity();
@@ -141,42 +155,73 @@ class MyApp : public core::baseapp {
         ntpcl.registerEntity();
     }
     void onRegister() override {
+        subscribe( "*/temperature" );
+        subscribe( "*/pressure" );
         // subscribe( "dbg/short" );
         // subscribe( "dbg/long" );
         // subscribe( "dbg/extralong" );
     }
 
-    int  l = 0;
     void onLoop( unsigned long timer ) override {
-        if ( l == 0 ) {
-            l = 1;
-            publish( "D1/display", "{\"text\":\"Boot\"}" );
-            publish( "D2/display" );
-        } else {
-            char         s[5];
-            TimeElements tt;
-            strcpy( s, "0000" );
-            time_t localt = util::msgtime::time_t2local( now() );
-            breakTime( localt, tt );
-            int hr         = tt.Hour;
-            int mr         = tt.Minute;
-            s[0]           = '0' + hr / 10;
-            s[1]           = '0' + hr % 10;
-            s[2]           = '0' + mr / 10;
-            s[3]           = '0' + mr % 10;
-            String newtime = String( s );
-            if ( oldtime != newtime ) {
-                oldtime = newtime;
-                publish( "D1/display", "{\"text\":\"" + newtime + "\"}" );
-            }
+        char         s[5];
+        TimeElements tt;
+        strcpy( s, "0000" );
+        time_t localt = util::msgtime::time_t2local( now() );
+        breakTime( localt, tt );
+        int hr         = tt.Hour;
+        int mr         = tt.Minute;
+        s[0]           = '0' + hr / 10;
+        s[1]           = '0' + hr % 10;
+        s[2]           = '0' + mr / 10;
+        s[3]           = '0' + mr % 10;
+        String newtime = String( s );
+        if ( oldtime != newtime || redraw ) {
+            redraw  = false;
+            oldtime = newtime;
+            publish( "D1/display/set", "{\"text\":\"" + newtime + "\"}" );
+
+            publish( "D2/display/set",
+                     "{\"x\":0,\"y\":0,\"textsize\":1,\"clear\":1,\"text\":\"" + newtime + "\"}" );
+            publish( "D2/display/set",
+                     "{\"x\":0,\"y\":20,\"textsize\":1,\"clear\":0,\"text\":\"" + isoTimeTemp +
+                         "\"}" );
+            publish( "D2/display/set",
+                     "{\"x\":0,\"y\":30,\"textsize\":1,\"clear\":0,\"text\":\"" + temperature +
+                         "\"}" );
+            publish( "D2/display/set",
+                     "{\"x\":0,\"y\":40,\"textsize\":1,\"clear\":0,\"text\":\"" + isoTimePress +
+                         "\"}" );
+            publish( "D2/display/set",
+                     "{\"x\":0,\"y\":50,\"textsize\":1,\"clear\":0,\"text\":\"" + pressure +
+                         "\"}" );
+
+            publish( "D3/display/set",
+                     "{\"x\":0,\"y\":0,\"clear\":1,\"text\":\"" + newtime + "\"}" );
         }
     }
 
     virtual void onReceive( String origin, String topic, String msg ) {
-        if ( topic == "dbg/short" ) {
-            // publish( "relais1/toggle" );
-        } else if ( topic == "dbg/long" ) {
-            // publish( "relais1/on", "{\"duration\":5}" );
+        int    p  = topic.indexOf( "/" );
+        String t1 = topic.substring( p + 1 );
+        if ( t1 == "temperature" ) {
+            DynamicJsonBuffer jsonBuffer( 200 );
+            JsonObject &      root = jsonBuffer.parseObject( msg );
+            if ( !root.success() ) {
+                DBG( "AppTemp: Invalid JSON received: " + msg );
+                return;
+            }
+            isoTimeTemp = root["time"].as<char *>();
+            temperature = root["temperature"].as<char *>();
+        }
+        if ( t1 == "pressure" ) {
+            DynamicJsonBuffer jsonBuffer( 200 );
+            JsonObject &      root = jsonBuffer.parseObject( msg );
+            if ( !root.success() ) {
+                DBG( "AppTemp: Invalid JSON received: " + msg );
+                return;
+            }
+            isoTimePress = root["time"].as<char *>();
+            pressure     = root["pressure"].as<char *>();
         }
     }
 };
