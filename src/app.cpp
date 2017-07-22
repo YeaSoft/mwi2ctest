@@ -24,6 +24,7 @@
 #include <base/mastertime.h>
 #include <base/net.h>
 #include <thing/GPS_NEO_6M.h>
+#include <thing/dcf77.h>
 #include <thing/i2cdev-BMP085.h>
 #include <thing/i2cdev-LCD_2_4_16_20.h>
 #include <thing/i2cdev-LED7_14_SEG.h>
@@ -109,6 +110,7 @@ class MyApp : public core::baseapp {
     base::mastertime           mtm;
     thing::GPS_NEO_6M          gps;
     thing::Ntp                 ntpcl;
+    thing::dcf77                dcf;
 
     MyApp()
         : core::baseapp( "MyApp" ), led1( "led1", BUILTIN_LED, 500 ), dmp( "dmp" ),
@@ -121,7 +123,7 @@ class MyApp : public core::baseapp {
 i2cd5( "D5", 0x71 )
 */
           bmp180( "bmp180", 0x77 ), i2coled( "D2", 0x3c, 64, 128 ), mtm( "mastertime" ),
-          gps( "gps" ), wnet( "net" ), ntpcl( "ntpcl" ) {
+          gps( "gps" ), wnet( "net" ), ntpcl( "ntpcl" ), dcf("dcf77") {
     }
 
     virtual void onSetup() {
@@ -131,29 +133,30 @@ i2cd5( "D5", 0x71 )
         // register myself
         registerEntity( 50000 );
 
-        spy.registerEntity();
-        dmp.registerEntity();
-        dbg.registerEntity();
-        led1.registerEntity( 50000 );
+        //spy.registerEntity();
+        //dmp.registerEntity();
+        //dbg.registerEntity();
+        //led1.registerEntity( 50000 );
 
-        i2cb.registerEntity();
-        i2cd1.registerEntity();
+        //i2cb.registerEntity();
+        //i2cd1.registerEntity();
         /*
         i2cd2.registerEntity();
         */
-        i2cd3.registerEntity();
+        //i2cd3.registerEntity();
         /*
         i2cd4.registerEntity();
         i2cd5.registerEntity();
         */
-        bmp180.registerEntity();
+        //bmp180.registerEntity();
         wnet.registerEntity();
 
-        i2coled.registerEntity();
+        //i2coled.registerEntity();
 
         mtm.registerEntity();
         gps.registerEntity();
         ntpcl.registerEntity();
+        dcf.registerEntity();
     }
     void onRegister() override {
         subscribe( "*/temperature" );
