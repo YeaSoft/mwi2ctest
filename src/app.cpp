@@ -125,7 +125,9 @@ class MyApp : public core::baseapp {
 i2cd5( "D5", 0x71 )
 */
           bmp180( "bmp180", 0x77 ), i2coled( "D2", 0x3c, 64, 128 ), mtm( "mastertime" ),
-          gps( "gps" ), wnet( "net" ), ntpcl( "ntpcl" ), dcf( "dcf77" ), hprtc( "hp-rtc", 0x68 ) {
+          gps( "gps" ), wnet( "net" ), ntpcl( "ntpcl" ), dcf( "dcf77" ),
+          // hprtc( "hp-rtc", "DS3231", 0x68 ) {
+          hprtc( "hp-rtc", "DS1307", 0x68 ) {
     }
 
     bool readAppConfig() {
