@@ -172,7 +172,7 @@ i2cd5( "D5", 0x71 )
         // register myself
         registerEntity( 50000 );
 
-        spy.registerEntity();
+        // spy.registerEntity();
         dmp.registerEntity();
         dbg.registerEntity();
         led1.registerEntity( 50000 );
