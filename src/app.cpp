@@ -110,7 +110,7 @@ class MyApp : public core::baseapp {
     base::mastertime           mtm;
     thing::GPS_NEO_6M          gps;
     thing::Ntp                 ntpcl;
-    thing::dcf77                dcf;
+    thing::dcf77               dcf;
 
     MyApp()
         : core::baseapp( "MyApp" ), led1( "led1", BUILTIN_LED, 500 ), dmp( "dmp" ),
@@ -123,7 +123,7 @@ class MyApp : public core::baseapp {
 i2cd5( "D5", 0x71 )
 */
           bmp180( "bmp180", 0x77 ), i2coled( "D2", 0x3c, 64, 128 ), mtm( "mastertime" ),
-          gps( "gps" ), wnet( "net" ), ntpcl( "ntpcl" ), dcf("dcf77") {
+          gps( "gps" ), wnet( "net" ), ntpcl( "ntpcl" ), dcf( "dcf77" ) {
     }
 
     virtual void onSetup() {
@@ -133,45 +133,60 @@ i2cd5( "D5", 0x71 )
         // register myself
         registerEntity( 50000 );
 
-        //spy.registerEntity();
-        //dmp.registerEntity();
-        //dbg.registerEntity();
-        //led1.registerEntity( 50000 );
+        spy.registerEntity();
+        dmp.registerEntity();
+        dbg.registerEntity();
+        led1.registerEntity( 50000 );
 
-        //i2cb.registerEntity();
-        //i2cd1.registerEntity();
+        i2cb.registerEntity();
+        i2cd1.registerEntity();
         /*
         i2cd2.registerEntity();
         */
-        //i2cd3.registerEntity();
+        i2cd3.registerEntity();
         /*
         i2cd4.registerEntity();
         i2cd5.registerEntity();
         */
-        //bmp180.registerEntity();
+        bmp180.registerEntity();
         wnet.registerEntity();
 
-        //i2coled.registerEntity();
+        i2coled.registerEntity();
 
         mtm.registerEntity();
         gps.registerEntity();
         ntpcl.registerEntity();
-        dcf.registerEntity();
+        // dcf.registerEntity();
     }
     void onRegister() override {
         subscribe( "*/temperature" );
         subscribe( "*/pressure" );
         subscribe( "mastertime/time/set" );
         subscribe( "*/gps" );
+        dPrint( "D1", "0000" );
+        dPrint( "D2", "", 0, 0, 1 );
+        dPrint( "D3", "", 0, 0, 1 );
         // subscribe( "dbg/short" );
         // subscribe( "dbg/long" );
         // subscribe( "dbg/extralong" );
     }
 
-    String oldiso = "";
-    void onLoop( unsigned long timer ) override {
+    void dPrint( String display, String text, int y = 0, int x = 0, int clear = 0,
+                 int textsize = 1 ) {
+        String topic = display + "/display/set";
+        String msg   = "{\"x\":" + String( x ) + ",\"y\":" + String( y ) +
+                     ",\"textsize\":" + String( textsize ) + ",\"clear\":" + String( clear ) +
+                     ",\"text\":\"" + text + "\"}";
+        publish( topic, msg );
+    }
+
+    String oldiso       = "";
+    String oldClockType = "";
+    String oldSnoSat    = "";
+    void   onLoop( unsigned long timer ) override {
         char         s[5];
         TimeElements tt;
+        String       snoSat;
         strcpy( s, "0000" );
         time_t localt = util::msgtime::time_t2local( now() );
         breakTime( localt, tt );
@@ -185,35 +200,47 @@ i2cd5( "D5", 0x71 )
         if ( oldtime != newtime || redraw ) {
             redraw  = false;
             oldtime = newtime;
-            publish( "D1/display/set", "{\"text\":\"" + newtime + "\"}" );
+            dPrint( "D1", newtime );
+            // publish( "D1/display/set", "{\"text\":\"" + newtime + "\"}" );
         }
         String iso = util::msgtime::time_t2ISO( localt );
         iso[10]    = ' ';
         iso[19]    = ' ';
         if ( oldiso != iso ) {
             oldiso = iso;
+            dPrint( "D2",
+                    iso + "\n\n" + isoTimeTemp + "\n" + temperature + "\n" + isoTimePress + "\n" +
+                        pressure,
+                    0, 0, 1 );
+            /*
             publish( "D2/display/set",
                      "{\"x\":0,\"y\":0,\"textsize\":1,\"clear\":1,\"text\":\"" + iso + "\"}" );
-            publish( "D2/display/set",
-                     "{\"x\":0,\"y\":20,\"textsize\":1,\"clear\":0,\"text\":\"" + isoTimeTemp +
-                         "\"}" );
-            publish( "D2/display/set",
-                     "{\"x\":0,\"y\":30,\"textsize\":1,\"clear\":0,\"text\":\"" + temperature +
-                         "\"}" );
-            publish( "D2/display/set",
-                     "{\"x\":0,\"y\":40,\"textsize\":1,\"clear\":0,\"text\":\"" + isoTimePress +
-                         "\"}" );
-            publish( "D2/display/set",
-                     "{\"x\":0,\"y\":50,\"textsize\":1,\"clear\":0,\"text\":\"" + pressure +
-                         "\"}" );
-
+            publish( "D2/display/set", "{\"x\":0,\"y\":20,\"textsize\":1,\"clear\":0,\"text\":\"" +
+                                           isoTimeTemp + "\"}" );
+            publish( "D2/display/set", "{\"x\":0,\"y\":30,\"textsize\":1,\"clear\":0,\"text\":\"" +
+                                           temperature + "\"}" );
+            publish( "D2/display/set", "{\"x\":0,\"y\":40,\"textsize\":1,\"clear\":0,\"text\":\"" +
+                                           isoTimePress + "\"}" );
+            publish( "D2/display/set", "{\"x\":0,\"y\":50,\"textsize\":1,\"clear\":0,\"text\":\"" +
+                                           pressure + "\"}" );
+            */
+            dPrint( "D3", iso, 0 );
+            if ( clockType != oldClockType ) {
+                oldClockType = clockType;
+                dPrint( "D3", "Clock type: " + clockType + "      ", 1 );
+            }
+            snoSat = String( noSat );
+            if ( snoSat != oldSnoSat ) {
+                oldSnoSat = snoSat;
+                dPrint( "D3", "Satellites: " + snoSat + "    ", 2 );
+            }
+            /*
             publish( "D3/display/set", "{\"x\":0,\"y\":0,\"clear\":0,\"text\":\"" + iso + "\"}" );
-            publish( "D3/display/set",
-                     "{\"x\":0,\"y\":1,\"clear\":0,\"text\":\"Clock type: " + clockType +
-                         "      \"}" );
-            publish( "D3/display/set",
-                     "{\"x\":0,\"y\":2,\"clear\":0,\"text\":\"Satellites: " + String( noSat ) +
-                         "      \"}" );
+            publish( "D3/display/set", "{\"x\":0,\"y\":1,\"clear\":0,\"text\":\"Clock type: " +
+                                           clockType + "      \"}" );
+            publish( "D3/display/set", "{\"x\":0,\"y\":2,\"clear\":0,\"text\":\"Satellites: " +
+                                           String( noSat ) + "      \"}" );
+            */
         }
     }
 
