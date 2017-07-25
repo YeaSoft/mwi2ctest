@@ -29,6 +29,7 @@
 #include <thing/i2cdev-LCD_2_4_16_20.h>
 #include <thing/i2cdev-LED7_14_SEG.h>
 #include <thing/i2cdev-OLED_SSD1306.h>
+#include <thing/i2cdev-RTC_DS3231.h>
 #include <thing/ntp.h>
 
 using namespace meisterwerk;
@@ -111,6 +112,7 @@ class MyApp : public core::baseapp {
     thing::GPS_NEO_6M          gps;
     thing::Ntp                 ntpcl;
     thing::dcf77               dcf;
+    thing::i2cdev_RTC_DS3231   hprtc;
 
     MyApp()
         : core::baseapp( "MyApp" ), led1( "led1", BUILTIN_LED, 500 ), dmp( "dmp" ),
@@ -123,7 +125,42 @@ class MyApp : public core::baseapp {
 i2cd5( "D5", 0x71 )
 */
           bmp180( "bmp180", 0x77 ), i2coled( "D2", 0x3c, 64, 128 ), mtm( "mastertime" ),
-          gps( "gps" ), wnet( "net" ), ntpcl( "ntpcl" ), dcf( "dcf77" ) {
+          gps( "gps" ), wnet( "net" ), ntpcl( "ntpcl" ), dcf( "dcf77" ), hprtc( "hp-rtc", 0x68 ) {
+    }
+
+    bool readAppConfig() {
+        SPIFFS.begin();
+        File f = SPIFFS.open( "/sensorclock.json", "r" );
+        if ( !f ) {
+            DBG( "SPIFFS needs to contain a sensorclock.json file!" );
+            return false;
+        } else {
+            String jsonstr = "";
+            while ( f.available() ) {
+                // Lets read line by line from the file
+                String lin = f.readStringUntil( '\n' );
+                jsonstr    = jsonstr + lin;
+            }
+            DynamicJsonBuffer jsonBuffer( 200 );
+            JsonObject &      root = jsonBuffer.parseObject( jsonstr );
+            if ( !root.success() ) {
+                DBG( "Invalid JSON received, check SPIFFS file sensorclock.json!" );
+                return false;
+            } else {
+                // SSID             = root["SSID"].as<char *>();
+                // JsonArray &servs = root["services"];
+                // for ( int i = 0; i < servs.size(); i++ ) {
+                //    JsonObject &srv = servs[i];
+                //    for ( auto obj : srv ) {
+                //        netservices[obj.key] = obj.value.as<char *>();
+                //    }
+            }
+        }
+
+        // for ( auto s : netservices ) {
+        //    DBG( "***" + s.first + "->" + s.second );
+        //}
+        return true;
     }
 
     virtual void onSetup() {
@@ -157,6 +194,7 @@ i2cd5( "D5", 0x71 )
         gps.registerEntity();
         ntpcl.registerEntity();
         // dcf.registerEntity();
+        hprtc.registerEntity();
     }
     void onRegister() override {
         subscribe( "*/temperature" );
@@ -201,7 +239,6 @@ i2cd5( "D5", 0x71 )
             redraw  = false;
             oldtime = newtime;
             dPrint( "D1", newtime );
-            // publish( "D1/display/set", "{\"text\":\"" + newtime + "\"}" );
         }
         String iso = util::msgtime::time_t2ISO( localt );
         iso[10]    = ' ';
@@ -212,18 +249,6 @@ i2cd5( "D5", 0x71 )
                     iso + "\n\n" + isoTimeTemp + "\n" + temperature + "\n" + isoTimePress + "\n" +
                         pressure,
                     0, 0, 1 );
-            /*
-            publish( "D2/display/set",
-                     "{\"x\":0,\"y\":0,\"textsize\":1,\"clear\":1,\"text\":\"" + iso + "\"}" );
-            publish( "D2/display/set", "{\"x\":0,\"y\":20,\"textsize\":1,\"clear\":0,\"text\":\"" +
-                                           isoTimeTemp + "\"}" );
-            publish( "D2/display/set", "{\"x\":0,\"y\":30,\"textsize\":1,\"clear\":0,\"text\":\"" +
-                                           temperature + "\"}" );
-            publish( "D2/display/set", "{\"x\":0,\"y\":40,\"textsize\":1,\"clear\":0,\"text\":\"" +
-                                           isoTimePress + "\"}" );
-            publish( "D2/display/set", "{\"x\":0,\"y\":50,\"textsize\":1,\"clear\":0,\"text\":\"" +
-                                           pressure + "\"}" );
-            */
             dPrint( "D3", iso, 0 );
             if ( clockType != oldClockType ) {
                 oldClockType = clockType;
@@ -234,13 +259,6 @@ i2cd5( "D5", 0x71 )
                 oldSnoSat = snoSat;
                 dPrint( "D3", "Satellites: " + snoSat + "    ", 2 );
             }
-            /*
-            publish( "D3/display/set", "{\"x\":0,\"y\":0,\"clear\":0,\"text\":\"" + iso + "\"}" );
-            publish( "D3/display/set", "{\"x\":0,\"y\":1,\"clear\":0,\"text\":\"Clock type: " +
-                                           clockType + "      \"}" );
-            publish( "D3/display/set", "{\"x\":0,\"y\":2,\"clear\":0,\"text\":\"Satellites: " +
-                                           String( noSat ) + "      \"}" );
-            */
         }
     }
 
