@@ -14,7 +14,7 @@
 // framework includes
 #include <MeisterWerk.h>
 
-#include <thing/pushbutton-GPIO.h>
+//#include <thing/pushbutton-GPIO.h>
 #include <util/dumper.h>
 #include <util/messagespy.h>
 #include <util/msgtime.h>
@@ -84,10 +84,10 @@ class MyLed : public core::entity {
 // application class
 class MyApp : public core::baseapp {
     public:
-    MyLed                  led1;
-    util::messagespy       spy;
-    util::dumper           dmp;
-    thing::pushbutton_GPIO dbg;
+    MyLed            led1;
+    util::messagespy spy;
+    util::dumper     dmp;
+    // thing::pushbutton_GPIO dbg;
 
     base::net                 wnet;
     base::i2cbus              i2cb;
@@ -120,7 +120,7 @@ class MyApp : public core::baseapp {
 
     MyApp()
         : core::baseapp( "MyApp" ), led1( "led1", BUILTIN_LED, 500 ), dmp( "dmp" ),
-          dbg( "dbg", D4, 1000, 5000 ), i2cb( "i2cbus", D2, D1 ),
+          /* dbg( "dbg", D4, 1000, 5000 ),*/ i2cb( "i2cbus", D2, D1 ),
 
           i2cd1( "D1", 0x70, 14 ),
           /*
@@ -176,9 +176,9 @@ i2cd5( "D5", 0x71 )
         // register myself
         registerEntity( 50000 );
 
-        spy.registerEntity();
+        // spy.registerEntity();
         dmp.registerEntity();
-        dbg.registerEntity();
+        // dbg.registerEntity();
         led1.registerEntity( 50000 );
 
         i2cb.registerEntity();
@@ -202,8 +202,8 @@ i2cd5( "D5", 0x71 )
         mqttcl.registerEntity();
         // dcf.registerEntity();
         hprtc.registerEntity();
-    }
-    void onRegister() override {
+        // }
+        // void onRegister() override {
         subscribe( "*/temperature" );
         subscribe( "*/pressure" );
         subscribe( "mastertime/time/set" );
@@ -228,7 +228,7 @@ i2cd5( "D5", 0x71 )
     String oldiso       = "";
     String oldClockType = "";
     String oldSnoSat    = "";
-    void   onLoop( unsigned long timer ) override {
+    void onLoop( unsigned long timer ) override {
         char         s[5];
         TimeElements tt;
         String       snoSat;
@@ -269,45 +269,28 @@ i2cd5( "D5", 0x71 )
         }
     }
 
-    virtual void onReceive( String origin, String topic, String msg ) {
-        int    p  = topic.indexOf( "/" );
-        String t1 = topic.substring( p + 1 );
+    virtual void onReceive( const char *origin, const char *ctopic, const char *msg ) override {
+        String            topic( ctopic );
+        int               p  = topic.indexOf( "/" );
+        String            t1 = topic.substring( p + 1 );
+        DynamicJsonBuffer jsonBuffer( 200 );
+        JsonObject &      root = jsonBuffer.parseObject( msg );
+        if ( !root.success() ) {
+            DBG( "AppTemp: Invalid JSON received: " + String( msg ) );
+            return;
+        }
         if ( t1 == "temperature" ) {
-            DynamicJsonBuffer jsonBuffer( 200 );
-            JsonObject &      root = jsonBuffer.parseObject( msg );
-            if ( !root.success() ) {
-                DBG( "AppTemp: Invalid JSON received: " + msg );
-                return;
-            }
             isoTimeTemp = root["time"].as<char *>();
             temperature = root["temperature"].as<char *>();
         }
         if ( t1 == "pressure" ) {
-            DynamicJsonBuffer jsonBuffer( 200 );
-            JsonObject &      root = jsonBuffer.parseObject( msg );
-            if ( !root.success() ) {
-                DBG( "AppTemp: Invalid JSON received: " + msg );
-                return;
-            }
             isoTimePress = root["time"].as<char *>();
             pressure     = root["pressure"].as<char *>();
         }
         if ( t1 == "gps" ) {
-            DynamicJsonBuffer jsonBuffer( 200 );
-            JsonObject &      root = jsonBuffer.parseObject( msg );
-            if ( !root.success() ) {
-                DBG( "AppTemp: Invalid JSON received: " + msg );
-                return;
-            }
             noSat = root["satellites"];
         }
         if ( topic == "mastertime/time/set" ) {
-            DynamicJsonBuffer jsonBuffer( 200 );
-            JsonObject &      root = jsonBuffer.parseObject( msg );
-            if ( !root.success() ) {
-                DBG( "AppTemp: Invalid JSON received: " + msg );
-                return;
-            }
             clockType = root["timesource"].as<char *>();
         }
     }
