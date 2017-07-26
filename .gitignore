@@ -2,6 +2,7 @@
 .piolibdeps
 .vscode
 data/net.json
+data/app.json
 .DS_Store
 GTAGS
 GRTAGS
