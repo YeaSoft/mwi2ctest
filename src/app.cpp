@@ -180,8 +180,9 @@ class MyApp : public core::baseapp {
     base::net                 wnet;
     base::i2cbus              i2cb;
     thing::i2cdev_LED7_14_SEG i2cd1;
-    String                    oldtime   = "";
-    String                    clockType = "";
+    String                    oldtime    = "";
+    String                    clockType  = "";
+    String                    applePrice = "";
 
     bool   redraw = false;
     String temperature;
@@ -261,9 +262,9 @@ i2cd5( "D5", 0x71 )
     virtual void onSetup() {
         // Debug console
         Serial.begin( 115200 );
-
         // register myself
         registerEntity( 50000 );
+        setLogLevel( loglevel::DBG );
 
         // spy.registerEntity();
         dmp.registerEntity();
@@ -297,6 +298,7 @@ i2cd5( "D5", 0x71 )
         subscribe( "*/temperature" );
         subscribe( "*/pressure" );
         subscribe( "mastertime/time/set" );
+        subscribe( "Apple/pricerealtime" );
         subscribe( "*/gps" );
         dPrint( "D1", "0000" );
         dPrint( "D2", "", 0, 0, 1 );
@@ -315,9 +317,10 @@ i2cd5( "D5", 0x71 )
         publish( topic, msg );
     }
 
-    String oldiso       = "";
-    String oldClockType = "";
-    String oldSnoSat    = "";
+    String oldiso        = "";
+    String oldClockType  = "";
+    String oldSnoSat     = "";
+    String oldApplePrice = "";
     void onLoop( unsigned long timer ) override {
         char         s[5];
         TimeElements tt;
@@ -350,12 +353,18 @@ i2cd5( "D5", 0x71 )
             if ( clockType != oldClockType ) {
                 oldClockType = clockType;
                 dPrint( "D3", "Clock type: " + clockType + "      ", 1 );
+                Log( loglevel::INFO, "Clock type: " + clockType, "time" );
             }
             snoSat = String( noSat );
             if ( snoSat != oldSnoSat ) {
                 oldSnoSat = snoSat;
                 dPrint( "D3", "Satellites: " + snoSat + "    ", 2 );
+                Log( loglevel::INFO, "Satellites: " + snoSat, "gps" );
             }
+        }
+        if ( applePrice != oldApplePrice ) {
+            oldApplePrice = applePrice;
+            dPrint( "D3", "Apple: " + applePrice + "    ", 3 );
         }
     }
 
@@ -365,6 +374,12 @@ i2cd5( "D5", 0x71 )
         String            t1 = topic.substring( p + 1 );
         DynamicJsonBuffer jsonBuffer( 200 );
         JsonObject &      root = jsonBuffer.parseObject( msg );
+        if ( topic == "Apple/pricerealtime" ) {
+            applePrice = msg;
+            Log( loglevel::DBG, "Apple realtime price information:" + applePrice );
+            return;
+        }
+
         if ( !root.success() ) {
             DBG( "AppTemp: Invalid JSON received: " + String( msg ) );
             return;
@@ -372,10 +387,12 @@ i2cd5( "D5", 0x71 )
         if ( t1 == "temperature" ) {
             isoTimeTemp = root["time"].as<char *>();
             temperature = root["temperature"].as<char *>();
+            Log( loglevel::INFO, "Temperature: " + temperature + "°C", "sensors" );
         }
         if ( t1 == "pressure" ) {
             isoTimePress = root["time"].as<char *>();
             pressure     = root["pressure"].as<char *>();
+            Log( loglevel::INFO, "Pressure: " + pressure + "mbar/hPa", "sensors" );
         }
         if ( t1 == "gps" ) {
             noSat = root["satellites"];
