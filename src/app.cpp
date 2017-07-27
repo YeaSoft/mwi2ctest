@@ -10,7 +10,7 @@
 #include <ESP8266WiFi.h>
 
 // Let MeisterWerk output debugs on Serial
-#define DEBUG 1
+#define _MW_DEBUG 1
 
 // framework includes
 #include <MeisterWerk.h>
