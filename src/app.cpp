@@ -5,7 +5,6 @@
 // internal LED and a few more toys
 
 // platform include
-
 #include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
 
@@ -85,6 +84,7 @@ class MyLed : public core::entity {
         frameRate = slices / 1000L;
         frame.setlength( frameRate );
         configureFrames();
+        Log( loglevel::INFO, "Up and running" );
         return ret;
     }
 
@@ -208,16 +208,12 @@ class MyApp : public core::baseapp {
     thing::i2cdev_RTC_DS3231   hprtc;
 
     MyApp()
-        : core::baseapp( "MyApp" ), led1( "led1", BUILTIN_LED, MyLed::ledmode::SOFTBLINK, 1250L ),
+        : core::baseapp( "SensorClock-II" ),
+          led1( "led1", BUILTIN_LED, MyLed::ledmode::SOFTBLINK, 1250L ),
           led2( "led2", 10, MyLed::ledmode::SOFTBLINK, 2500L ), dmp( "dmp" ),
-          /* dbg( "dbg", D4, 1000, 5000 ),*/ i2cb( "i2cbus", D2, D1 ),
-
-          i2cd1( "D1", 0x70, 14 ),
-          /*
-          i2cd2( "D2", 0x25, "2x16" ), */ i2cd3( "D3", 0x26, 4,
-                                                 20 ), /* i2cd4( "D4", 0x27, "2x16" ),
-i2cd5( "D5", 0x71 )
-*/
+          /* dbg( "dbg", D4, 1000, 5000 ),*/ i2cb( "i2cbus", D2, D1 ), i2cd1( "D1", 0x70, 14 ),
+          /* i2cd2( "D2", 0x25, "2x16" ), */ i2cd3(
+              "D3", 0x26, 4, 20 ), /* i2cd4( "D4", 0x27, "2x16" ), i2cd5( "D5", 0x71 ) */
           bmp180( "bmp180", 0x77 ), i2coled( "D2", 0x3c, 64, 128 ), mtm( "mastertime" ),
           gps( "gps", D6, D7 ), wnet( "net" ), ntpcl( "ntpcl" ), mqttcl( "mqttcl" ), dcf( "dcf77" ),
           // hprtc( "hp-rtc", "DS3231", 0x68 ) {
@@ -306,6 +302,7 @@ i2cd5( "D5", 0x71 )
         // subscribe( "dbg/short" );
         // subscribe( "dbg/long" );
         // subscribe( "dbg/extralong" );
+        Log( loglevel::INFO, "Up and running." );
     }
 
     void dPrint( String display, String text, int y = 0, int x = 0, int clear = 0, int textsize = 1,
@@ -321,7 +318,7 @@ i2cd5( "D5", 0x71 )
     String oldClockType  = "";
     String oldSnoSat     = "";
     String oldApplePrice = "";
-    void onLoop( unsigned long timer ) override {
+    void   onLoop( unsigned long timer ) override {
         char         s[5];
         TimeElements tt;
         String       snoSat;
