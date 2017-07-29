@@ -54,7 +54,7 @@ class MyLed : public core::entity {
 
     MyLed( String name, uint8_t pin, ledmode ledMode = ledmode::STATIC,
            unsigned long ledBlinkIntervalMs = 500L )
-        : core::entity( name ), pin{pin}, frame( frameRate ),
+        : core::entity( name, 50000 ), pin{pin}, frame( frameRate ),
           blinker( ledBlinkIntervalMs ), ledMode{ledMode}, ledBlinkIntervalMs{ledBlinkIntervalMs} {
         pinMode( pin, OUTPUT );
         pwmrange = 96; // PWMRANGE;
@@ -78,14 +78,11 @@ class MyLed : public core::entity {
         ledLevel = 0;
     }
 
-    bool registerEntity( unsigned long slices   = 50000,
-                         unsigned int  priority = core::scheduler::PRIORITY_NORMAL ) {
-        bool ret  = meisterwerk::core::entity::registerEntity( slices );
-        frameRate = slices / 1000L;
+    virtual void setup() override {
+        frameRate = 50000 / 1000L;
         frame.setlength( frameRate );
         configureFrames();
-        Log( loglevel::INFO, "Up and running" );
-        return ret;
+        log( T_LOGLEVEL::INFO, "Up and running" );
     }
 
     void setLedBlinkIntervalMs( unsigned long ms ) {
@@ -111,7 +108,7 @@ class MyLed : public core::entity {
     // unsigned long cnt1 = 0;
     // unsigned long cnt2 = 0;
     // int           dbgc = 0;
-    virtual void onLoop( unsigned long ticker ) {
+    virtual void loop() {
         if ( ledMode == ledmode::STATIC )
             return;
         int nframes = frame.beat();
@@ -208,7 +205,7 @@ class MyApp : public core::baseapp {
     thing::i2cdev_RTC_DS3231   hprtc;
 
     MyApp()
-        : core::baseapp( "SensorClock-II" ),
+        : core::baseapp( "SensorClock-II", 50000 ),
           led1( "led1", BUILTIN_LED, MyLed::ledmode::SOFTBLINK, 1250L ),
           led2( "led2", 10, MyLed::ledmode::SOFTBLINK, 2500L ), dmp( "dmp" ),
           /* dbg( "dbg", D4, 1000, 5000 ),*/ i2cb( "i2cbus", D2, D1 ), i2cd1( "D1", 0x70, 14 ),
@@ -255,42 +252,35 @@ class MyApp : public core::baseapp {
         return true;
     }
 
-    virtual void onSetup() {
+    virtual void setup() override {
         // Debug console
         Serial.begin( 115200 );
         // register myself
-        registerEntity( 50000 );
-        setLogLevel( loglevel::DBG );
-
-        // spy.registerEntity();
-        dmp.registerEntity();
-        // dbg.registerEntity();
-        led1.registerEntity();
-        led2.registerEntity();
-
-        i2cb.registerEntity();
-        i2cd1.registerEntity();
+        setLogLevel( T_LOGLEVEL::DBG );
         /*
-        i2cd2.registerEntity();
-        */
-        i2cd3.registerEntity();
-        /*
-        i2cd4.registerEntity();
-        i2cd5.registerEntity();
-        */
-        bmp180.registerEntity();
-        wnet.registerEntity();
+                // spy.registerEntity();
+                dmp.registerEntity();
+                // dbg.registerEntity();
+                led1.registerEntity();
+                led2.registerEntity();
 
-        i2coled.registerEntity();
+                i2cb.registerEntity();
+                i2cd1.registerEntity();
 
-        mtm.registerEntity();
-        gps.registerEntity();
-        ntpcl.registerEntity();
-        mqttcl.registerEntity();
-        // dcf.registerEntity();
-        hprtc.registerEntity();
-        // }
-        // void onRegister() override {
+                i2cd3.registerEntity();
+
+                bmp180.registerEntity();
+                wnet.registerEntity();
+
+                i2coled.registerEntity();
+
+                mtm.registerEntity();
+                gps.registerEntity();
+                ntpcl.registerEntity();
+                mqttcl.registerEntity();
+                // dcf.registerEntity();
+                hprtc.registerEntity();
+                */
         subscribe( "*/temperature" );
         subscribe( "*/pressure" );
         subscribe( "mastertime/time/set" );
@@ -299,10 +289,7 @@ class MyApp : public core::baseapp {
         dPrint( "D1", "0000" );
         dPrint( "D2", "", 0, 0, 1 );
         dPrint( "D3", "", 0, 0, 1 );
-        // subscribe( "dbg/short" );
-        // subscribe( "dbg/long" );
-        // subscribe( "dbg/extralong" );
-        Log( loglevel::INFO, "Up and running." );
+        log( T_LOGLEVEL::INFO, "Up and running." );
     }
 
     void dPrint( String display, String text, int y = 0, int x = 0, int clear = 0, int textsize = 1,
@@ -318,7 +305,7 @@ class MyApp : public core::baseapp {
     String oldClockType  = "";
     String oldSnoSat     = "";
     String oldApplePrice = "";
-    void   onLoop( unsigned long timer ) override {
+    void   loop() override {
         char         s[5];
         TimeElements tt;
         String       snoSat;
@@ -350,13 +337,13 @@ class MyApp : public core::baseapp {
             if ( clockType != oldClockType ) {
                 oldClockType = clockType;
                 dPrint( "D3", "Clock type: " + clockType + "      ", 1 );
-                Log( loglevel::INFO, "Clock type: " + clockType, "time" );
+                log( T_LOGLEVEL::INFO, "Clock type: " + clockType, "time" );
             }
             snoSat = String( noSat );
             if ( snoSat != oldSnoSat ) {
                 oldSnoSat = snoSat;
                 dPrint( "D3", "Satellites: " + snoSat + "    ", 2 );
-                Log( loglevel::INFO, "Satellites: " + snoSat, "gps" );
+                log( T_LOGLEVEL::INFO, "Satellites: " + snoSat, "gps" );
             }
         }
         if ( applePrice != oldApplePrice ) {
@@ -365,7 +352,7 @@ class MyApp : public core::baseapp {
         }
     }
 
-    virtual void onReceive( const char *origin, const char *ctopic, const char *msg ) override {
+    virtual void receive( const char *origin, const char *ctopic, const char *msg ) override {
         String            topic( ctopic );
         int               p  = topic.indexOf( "/" );
         String            t1 = topic.substring( p + 1 );
@@ -373,7 +360,7 @@ class MyApp : public core::baseapp {
         JsonObject &      root = jsonBuffer.parseObject( msg );
         if ( topic == "Apple/pricerealtime" ) {
             applePrice = msg;
-            Log( loglevel::DBG, "Apple realtime price information:" + applePrice );
+            log( T_LOGLEVEL::DBG, "Apple realtime price information:" + applePrice );
             return;
         }
 
@@ -384,12 +371,12 @@ class MyApp : public core::baseapp {
         if ( t1 == "temperature" ) {
             isoTimeTemp = root["time"].as<char *>();
             temperature = root["temperature"].as<char *>();
-            Log( loglevel::INFO, "Temperature: " + temperature + "°C", "sensors" );
+            log( T_LOGLEVEL::INFO, "Temperature: " + temperature + "°C", "sensors" );
         }
         if ( t1 == "pressure" ) {
             isoTimePress = root["time"].as<char *>();
             pressure     = root["pressure"].as<char *>();
-            Log( loglevel::INFO, "Pressure: " + pressure + "mbar/hPa", "sensors" );
+            log( T_LOGLEVEL::INFO, "Pressure: " + pressure + "mbar/hPa", "sensors" );
         }
         if ( t1 == "gps" ) {
             noSat = root["satellites"];
