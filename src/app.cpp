@@ -12,27 +12,28 @@
 #define _MW_DEBUG 1
 
 // framework includes
-#include <MeisterWerk.h>
+#include <../MeisterWerk.h>
 
 //#include <thing/pushbutton-GPIO.h>
-#include <util/dumper.h>
-#include <util/messagespy.h>
-#include <util/metronome.h>
-#include <util/msgtime.h>
-#include <util/timebudget.h>
+#include <../util/dumper.h>
+#include <../util/messagespy.h>
+#include <../util/metronome.h>
+#include <../util/msgtime.h>
+#include <../util/timebudget.h>
 
-#include <base/i2cbus.h>
-#include <base/mastertime.h>
-#include <base/net.h>
-#include <thing/GPS_NEO_6M.h>
-#include <thing/dcf77.h>
-#include <thing/i2cdev-BMP085.h>
-#include <thing/i2cdev-LCD_2_4_16_20.h>
-#include <thing/i2cdev-LED7_14_SEG.h>
-#include <thing/i2cdev-OLED_SSD1306.h>
-#include <thing/i2cdev-RTC_DS3231.h>
-#include <thing/mqtt.h>
-#include <thing/ntp.h>
+#include <../base/i2cbus.h>
+#include <../base/mastertime.h>
+#include <../base/net.h>
+#include <../thing/GPS_NEO_6M.h>
+#include <../thing/dcf77.h>
+#include <../thing/i2cdev-BMP085.h>
+#include <../thing/i2cdev-LCD_2_4_16_20.h>
+#include <../thing/i2cdev-LED7_14_SEG.h>
+#include <../thing/i2cdev-OLED_SSD1306.h>
+#include <../thing/i2cdev-RTC_DS3231.h>
+#include <../thing/i2cdev-TSL2561.h>
+#include <../thing/mqtt.h>
+#include <../thing/ntp.h>
 
 using namespace meisterwerk;
 
@@ -184,8 +185,10 @@ class MyApp : public core::baseapp {
     bool   redraw = false;
     String temperature;
     String pressure;
+    String luminosity;
     String isoTimeTemp;
     String isoTimePress;
+    String isoTimeLumi;
     int    noSat = 0;
     /*
     thing::i2cdev_LCD_2_4_16_20 i2cd2;
@@ -203,6 +206,7 @@ class MyApp : public core::baseapp {
     thing::mqtt                mqttcl;
     thing::dcf77               dcf;
     thing::i2cdev_RTC_DS3231   hprtc;
+    thing::i2cdev_TSL2561      lumi;
 
     MyApp()
         : core::baseapp( "SensorClock-II", 50000 ),
@@ -214,7 +218,7 @@ class MyApp : public core::baseapp {
           bmp180( "bmp180", 0x77 ), i2coled( "D2", 0x3c, 64, 128 ), mtm( "mastertime" ),
           gps( "gps", D6, D7 ), wnet( "net" ), ntpcl( "ntpcl" ), mqttcl( "mqttcl" ), dcf( "dcf77" ),
           // hprtc( "hp-rtc", "DS3231", 0x68 ) {
-          hprtc( "hp-rtc", "DS1307", 0x68 ) {
+          hprtc( "hp-rtc", "DS1307", 0x68 ), lumi( "lumi", 0x39 ) {
     }
 
     bool readAppConfig() {
@@ -255,34 +259,12 @@ class MyApp : public core::baseapp {
     virtual void setup() override {
         // Debug console
         Serial.begin( 115200 );
-        // register myself
+
         setLogLevel( T_LOGLEVEL::DBG );
-        /*
-                // spy.registerEntity();
-                dmp.registerEntity();
-                // dbg.registerEntity();
-                led1.registerEntity();
-                led2.registerEntity();
 
-                i2cb.registerEntity();
-                i2cd1.registerEntity();
-
-                i2cd3.registerEntity();
-
-                bmp180.registerEntity();
-                wnet.registerEntity();
-
-                i2coled.registerEntity();
-
-                mtm.registerEntity();
-                gps.registerEntity();
-                ntpcl.registerEntity();
-                mqttcl.registerEntity();
-                // dcf.registerEntity();
-                hprtc.registerEntity();
-                */
         subscribe( "*/temperature" );
         subscribe( "*/pressure" );
+        subscribe( "*/luminosity" );
         subscribe( "mastertime/time/set" );
         subscribe( "Apple/pricerealtime" );
         subscribe( "*/gps" );
@@ -377,6 +359,11 @@ class MyApp : public core::baseapp {
             isoTimePress = root["time"].as<char *>();
             pressure     = root["pressure"].as<char *>();
             log( T_LOGLEVEL::INFO, "Pressure: " + pressure + "mbar/hPa", "sensors" );
+        }
+        if ( t1 == "luminosity" ) {
+            isoTimeLumi = root["time"].as<char *>();
+            luminosity  = root["luminosity"].as<char *>();
+            log( T_LOGLEVEL::INFO, "Luminosity: " + luminosity + "lux", "sensors" );
         }
         if ( t1 == "gps" ) {
             noSat = root["satellites"];
