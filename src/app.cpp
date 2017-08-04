@@ -12,29 +12,29 @@
 #define _MW_DEBUG 1
 
 // framework includes
-#include <../MeisterWerk.h>
+#include <MeisterWerk.h>
 
 //#include <thing/pushbutton-GPIO.h>
-#include <../util/dumper.h>
-#include <../util/messagespy.h>
-#include <../util/metronome.h>
-#include <../util/msgtime.h>
-#include <../util/timebudget.h>
+#include <util/dumper.h>
+#include <util/messagespy.h>
+#include <util/metronome.h>
+#include <util/msgtime.h>
+#include <util/timebudget.h>
 
-#include <../base/i2cbus.h>
-#include <../base/mastertime.h>
-#include <../base/net.h>
-#include <../thing/GPS_NEO_6M.h>
-#include <../thing/dcf77.h>
-#include <../thing/i2cdev-BMP085.h>
-#include <../thing/i2cdev-LCD_2_4_16_20.h>
-#include <../thing/i2cdev-LED7_14_SEG.h>
-#include <../thing/i2cdev-OLED_SSD1306.h>
-#include <../thing/i2cdev-RTC_DS3231.h>
-#include <../thing/i2cdev-TSL2561.h>
-#include <../thing/mqtt.h>
-#include <../thing/ntp.h>
-#include <../thing/temp-hum_DHT11_22.h>
+#include <base/i2cbus.h>
+#include <base/mastertime.h>
+#include <base/net.h>
+#include <thing/GPS_NEO_6M.h>
+#include <thing/dcf77.h>
+#include <thing/i2cdev-BMP085.h>
+#include <thing/i2cdev-LCD_2_4_16_20.h>
+#include <thing/i2cdev-LED7_14_SEG.h>
+#include <thing/i2cdev-OLED_SSD1306.h>
+#include <thing/i2cdev-RTC_DS3231.h>
+#include <thing/i2cdev-TSL2561.h>
+#include <thing/mqtt.h>
+#include <thing/ntp.h>
+#include <thing/temp-hum_DHT11_22.h>
 
 using namespace meisterwerk;
 
@@ -57,17 +57,18 @@ class MyLed : public core::entity {
     float           ledMaxBright;
 
     MyLed( String name, uint8_t pin, ledmode ledMode = ledmode::STATIC,
-           unsigned long ledBlinkIntervalMs = 500L )
-        : core::entity( name, 50000 ), pin{pin}, frame( frameRate ),
-          blinker( ledBlinkIntervalMs ), ledMode{ledMode}, ledBlinkIntervalMs{ledBlinkIntervalMs} {
+           unsigned long ledBlinkIntervalMs = 500L, unsigned long frameRate = 50000 )
+        : core::entity( name, 50000 ), pin{pin}, ledMode{ledMode},
+          ledBlinkIntervalMs{ledBlinkIntervalMs}, frame( frameRate ),
+          blinker( ledBlinkIntervalMs ) {
         pinMode( pin, OUTPUT );
         initPwmrange = 96; // PWMRANGE;
-        pwmrange     = initPwmrang;
+        pwmrange     = initPwmrange;
         ledMaxBright = 1023.0;
         ledLevel     = 0;
     }
 
-    getPwmRangeFromLumi( float luminosity ) {
+    void getPwmRangeFromLumi( float luminosity ) {
         pwmrange         = initPwmrange * luminosity / 1023.0;
         frameDelta       = pwmrange * frameRate / ledBlinkIntervalMs;
         directionalDelta = frameDelta;
@@ -94,9 +95,9 @@ class MyLed : public core::entity {
         configureFrames();
         subscribe( "*/luminosity" );
         subscribe( entName + "/mode/set" );
-        //subscribe( entName + "/mode/get" );
+        // subscribe( entName + "/mode/get" );
         subscribe( entName + "/state/set" );
-        //subscribe( entName + "/state/get" );
+        // subscribe( entName + "/state/get" );
         log( T_LOGLEVEL::INFO, "Up and running" );
     }
 
@@ -115,20 +116,27 @@ class MyLed : public core::entity {
         state   = ledState;
         if ( state ) {
             digitalWrite( pin, LOW ); // ON
+            log( T_LOGLEVEL::INFO, entName + " on" );
         } else {
             digitalWrite( pin, HIGH ); // OFF
+            log( T_LOGLEVEL::INFO, entName + " off" );
         }
     }
 
     void setLed( float ledBriState ) { // 0..1.0;
         ledMode = ledmode::STATIC;
-        if ( ledBriState > 0.0 )
+        if ( ledBriState > 0.0 ) {
+            log( T_LOGLEVEL::INFO, entName + " on" );
             state = true;
-        else
+
+        } else {
+            log( T_LOGLEVEL::INFO, entName + " off" );
             state = false;
+        }
 
         if ( state ) {
-            analogWrite( pin, ledBrightState * 1024.0 ); // ON
+            log( T_LOGLEVEL::INFO, entName + " brightness: " + String( ledBriState ) );
+            analogWrite( pin, ledBriState * 1024.0 ); // ON
         } else {
             digitalWrite( pin, HIGH ); // OFF
         }
@@ -183,7 +191,9 @@ class MyLed : public core::entity {
         String topic( ctopic );
         int    p  = topic.indexOf( "/" );
         String t1 = topic.substring( p + 1 );
+        log( T_LOGLEVEL::INFO, topic + " | " + msg );
         if ( t1 == "luminosity" ) {
+            /*
             DBG( "Luminosity msg: " + String( msg ) );
             DynamicJsonBuffer jsonBuffer( 200 );
             JsonObject &      root = jsonBuffer.parseObject( msg );
@@ -191,12 +201,14 @@ class MyLed : public core::entity {
                 DBG( "Led/luminosity: Invalid JSON received: " + String( msg ) );
                 return;
             }
-            float lx     = atof( root["luminosity"] );
+            float lx     = root["luminosity"];
             ledMaxBright = ( lx * 1023.0 / 1000.0 );
             if ( ledMaxBright > 1023 )
                 ledMaxBright = 1023;
-            if ( lcdBright < 1 )
+            if ( ledMaxBright < 1 )
                 ledMaxBright = 1;
+
+            */
         }
         if ( topic == entName + "/state/set" ) {
             DBG( "state msg: " + String( msg ) );
@@ -206,24 +218,17 @@ class MyLed : public core::entity {
                 DBG( "Led/state: Invalid JSON received: " + String( msg ) );
                 return;
             }
-            String stateStr = atof( root["state"] );
-            if ( state == "off" ) {
-                setState( false );
-            } else if ( state == "on" ) {
-                float bri = atof( root["brightness"] );
+            String stateStr = root["state"];
+            if ( stateStr == "off" ) {
+                setLed( false );
+            } else if ( stateStr == "on" ) {
+                float bri = root["brightness"];
                 if ( bri > 0.0 ) {
-                    setState( bri );
-
+                    setLed( bri );
                 } else {
-                    setState( true );
+                    setLed( true );
                 }
             }
-
-            ledMaxBright = ( lx * 1023.0 / 1000.0 );
-            if ( ledMaxBright > 1023 )
-                ledMaxBright = 1023;
-            if ( lcdBright < 1 )
-                ledMaxBright = 1;
         }
         if ( topic == entName + "/mode/set" ) {
             DBG( "Mode msg: " + String( msg ) );
@@ -233,24 +238,18 @@ class MyLed : public core::entity {
                 DBG( "Led/mode: Invalid JSON received: " + String( msg ) );
                 return;
             }
-            String stateStr = atof( root["state"] );
-            if ( state == "off" ) {
-                setState( false );
-            } else if ( state == "on" ) {
-                float bri = atof( root["brightness"] );
-                if ( bri > 0.0 ) {
-                    setState( bri );
-
-                } else {
-                    setState( true );
-                }
+            String modeStr = root["mode"];
+            if ( modeStr == "static" ) {
+                setLedBlinkMode( ledmode::STATIC );
+            } else if ( modeStr == "softblink" ) {
+                setLedBlinkMode( ledmode::SOFTBLINK );
+                float inter = root["intervall"];
+                setLedBlinkIntervalMs( inter );
+            } else if ( modeStr == "hardblink" ) {
+                setLedBlinkMode( ledmode::HARDBLINK );
+                float inter = root["intervall"];
+                setLedBlinkIntervalMs( inter );
             }
-
-            ledMaxBright = ( lx * 1023.0 / 1000.0 );
-            if ( ledMaxBright > 1023 )
-                ledMaxBright = 1023;
-            if ( lcdBright < 1 )
-                ledMaxBright = 1;
         }
     }
 };
@@ -316,7 +315,7 @@ class MyApp : public core::baseapp {
     MyApp()
         : core::baseapp( "SensorClock-II", 50000 ),
           led1( "led1", BUILTIN_LED, MyLed::ledmode::SOFTBLINK, 1250L ),
-          led2( "led2", 10, MyLed::ledmode::SOFTBLINK, 2500L ), dmp( "dmp" ),
+          led2( "led2", D3, MyLed::ledmode::STATIC, 2500L ), dmp( "dmp" ),
           /* dbg( "dbg", D4, 1000, 5000 ),*/ i2cb( "i2cbus", D2, D1 ), i2cd1( "D1", 0x70, 14 ),
           /* i2cd2( "D2", 0x25, "2x16" ), */ i2cd3(
               "D3", 0x26, 4, 20 ), /* i2cd4( "D4", 0x27, "2x16" ), i2cd5( "D5", 0x71 ) */
