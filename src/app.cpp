@@ -307,10 +307,10 @@ class MyApp : public core::baseapp {
     thing::GPS_NEO_6M          gps;
     thing::Ntp                 ntpcl;
     thing::mqtt                mqttcl;
-    // thing::dcf77               dcf;
-    thing::i2cdev_RTC_DS3231 hprtc;
-    thing::i2cdev_TSL2561    lumi;
-    thing::dht               dhtxx;
+    thing::dcf77               dcf;
+    thing::i2cdev_RTC_DS3231   hprtc;
+    thing::i2cdev_TSL2561      lumi;
+    thing::dht                 dhtxx;
 
     MyApp()
         : core::baseapp( "SensorClock-II", 50000 ),
@@ -320,8 +320,7 @@ class MyApp : public core::baseapp {
           /* i2cd2( "D2", 0x25, "2x16" ), */ i2cd3(
               "D3", 0x26, 4, 20 ), /* i2cd4( "D4", 0x27, "2x16" ), i2cd5( "D5", 0x71 ) */
           bmp180( "bmp180", 0x77 ), i2coled( "D2", 0x3c, 64, 128 ), mtm( "mastertime" ),
-          gps( "gps", D6, D7 ), wnet( "net" ), ntpcl( "ntpcl" ),
-          mqttcl( "mqttcl" ), /* dcf( "dcf77" ), */
+          gps( "gps", D6, D7 ), wnet( "net" ), ntpcl( "ntpcl" ), mqttcl( "mqttcl" ), dcf( "dcf77" ),
           // hprtc( "hp-rtc", "DS3231", 0x68 ) {
           hprtc( "hp-rtc", "DS1307", 0x68 ), lumi( "lumi", 0x39 ), dhtxx( "dht", "DHT22", D5 ) {
     }
