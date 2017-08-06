@@ -271,9 +271,9 @@ class MyLed : public core::entity {
 // application class
 class MyApp : public core::baseapp {
     public:
-    MyLed            led1, led2;
-    util::messagespy spy;
-    util::dumper     dmp;
+    MyLed led1, led2;
+    // util::messagespy spy;
+    util::dumper dmp;
     // thing::pushbutton_GPIO dbg;
 
     base::net                 wnet;
