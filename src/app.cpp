@@ -93,7 +93,7 @@ class MyLed : public core::entity {
         frameRate = 50000 / 1000L;
         frame.setlength( frameRate );
         configureFrames();
-        subscribe( "*/luminosity" );
+        subscribe( "+/luminosity" );
         subscribe( entName + "/mode/set" );
         // subscribe( entName + "/mode/get" );
         subscribe( entName + "/state/set" );
@@ -366,13 +366,13 @@ class MyApp : public core::baseapp {
 
         setLogLevel( T_LOGLEVEL::DBG );
 
-        subscribe( "*/temperature" );
-        subscribe( "*/pressure" );
-        subscribe( "*/luminosity" );
-        subscribe( "*/humidity" );
+        subscribe( "+/temperature" );
+        subscribe( "+/pressure" );
+        subscribe( "+/luminosity" );
+        subscribe( "+/humidity" );
         subscribe( "mastertime/time/set" );
         subscribe( "Apple/pricerealtime" );
-        subscribe( "*/gps" );
+        subscribe( "+/gps" );
         dPrint( "D1", "0000" );
         dPrint( "D2", "", 0, 0, 1 );
         dPrint( "D3", "", 0, 0, 1 );
